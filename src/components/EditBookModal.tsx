@@ -52,6 +52,7 @@ export default function EditBookModal({ isOpen, onClose, bookToEdit }: EditBookM
         copyright: bookData.copyright,
         availability: Number(bookData.availability), // Ensure availability is a number
         location: bookData.location,
+        // Exclude 'createdAt' if it's not being updated
       });
 
       toast.success('Book updated successfully');

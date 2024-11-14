@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import BookList from './components/BookList';
+import Home from './components/Home'; // Import the Home component
 
 function App() {
   return (
@@ -11,8 +12,9 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/dashboard" element={<Dashboard />}>
+            <Route path="home" element={<Home />} /> {/* Home route inside Dashboard */}
             <Route path="books" element={<BookList />} />
-            <Route index element={<Navigate to="books" replace />} />
+            <Route index element={<Navigate to="home" replace />} /> {/* Redirect to Home */}
           </Route>
           <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>
