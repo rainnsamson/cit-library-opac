@@ -15,7 +15,7 @@ export default function BookList() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
-  const [searchTerm, setSearchTerm] = useState(''); // State for search term
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const q = query(collection(db, 'books-collection'), orderBy('createdAt', 'desc'));
@@ -42,9 +42,7 @@ export default function BookList() {
 
   const handleDelete = async (id: string) => {
     const isConfirmed = window.confirm('Are you sure you want to delete this book?');
-    if (!isConfirmed) {
-      return;
-    }
+    if (!isConfirmed) return;
 
     try {
       await deleteDoc(doc(db, 'books-collection', id));
@@ -70,13 +68,11 @@ export default function BookList() {
     setBookToEdit(null);
   };
 
-  // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    setCurrentPage(1); // Reset to the first page on new search
+    setCurrentPage(1);
   };
 
-  // Filter books based on search term
   const filteredBooks = books.filter((book) =>
     book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     book.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,7 +80,6 @@ export default function BookList() {
     book.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Pagination functions
   const indexOfLastBook = currentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
@@ -97,10 +92,7 @@ export default function BookList() {
         <h2 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
           Books Collection
         </h2>
-        <button
-          onClick={handleAddBook}
-          className="btn-primary flex items-center"
-        >
+        <button onClick={handleAddBook} className="btn-primary flex items-center">
           <span className="mr-2 text-lg">+</span>
           Add Book
         </button>
@@ -136,7 +128,7 @@ export default function BookList() {
               <tr key={book.id} className="hover:bg-gray-50/50 transition-colors duration-150">
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{book.callNumber}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{book.author}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{book.title}</td>
+                <td className="px-6 py-4 whitespace-normal text-sm text-gray-600 break-words">{book.title}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{book.copyright}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{book.location}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{book.availability}</td>

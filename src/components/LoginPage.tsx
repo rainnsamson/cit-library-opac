@@ -35,13 +35,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-red-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-8 p-10 bg-white/70 backdrop-blur-lg rounded-2xl shadow-xl">
-        <div>
+        <div className="flex flex-col items-center">
+          <img src="src/logo/CIT logo.png" alt="CIT Logo" className="w-20 h-20 mb-4" />
           <h2 className="text-center text-3xl font-extrabold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent">
             Library Admin
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Sign in to manage your library
-          </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4">
@@ -78,6 +76,9 @@ export default function LoginPage() {
             </button>
           </div>
         </form>
+        <footer className="mt-8 text-center text-gray-500 text-sm">
+          © 2024 Caraga Institute of Technology. All Rights Reserved.
+        </footer>
       </div>
     </div>
   );

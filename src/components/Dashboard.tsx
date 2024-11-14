@@ -19,7 +19,7 @@ export default function Dashboard() {
   return (
     <div className="flex bg-gradient-to-br from-red-50 via-white to-red-50 min-h-screen">
       <Sidebar />
-      <div className="ml-72 flex-1">
+      <div className="ml-72 flex-1 relative">
         {/* Logout Icon */}
         <div className="flex justify-end p-4">
           <button onClick={handleLogout} className="text-red-600 hover:text-red-800">
@@ -27,6 +27,11 @@ export default function Dashboard() {
           </button>
         </div>
         <Outlet />
+
+        {/* Copyright text at the bottom */}
+        <div className="absolute bottom-4 w-full text-center py-4 text-gray-600">
+          <p>© 2024 Caraga Institute of Technology. All Rights Reserved.</p>
+        </div>
       </div>
     </div>
   );
