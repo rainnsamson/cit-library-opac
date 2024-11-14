@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50;
+  }
+}
+
+@layer components {
+  .input-field {
+    @apply mt-1 block w-full rounded-lg border-gray-200 bg-white/50 shadow-sm 
+    focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all duration-200;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg
+    hover:from-red-700 hover:to-red-600 transform hover:-translate-y-0.5 
+    transition-all duration-200 shadow-md hover:shadow-lg;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-gray-700 rounded-lg hover:bg-gray-50
+    transform hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md;
+  }
+}
