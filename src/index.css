@@ -25,3 +25,18 @@
     transform hover:-translate-y-0.5 transition-all duration-200 shadow-sm hover:shadow-md;
   }
 }
+
+@keyframes slide-in {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.4s ease-out;
+}

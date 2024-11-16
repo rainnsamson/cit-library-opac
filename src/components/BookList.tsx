@@ -78,6 +78,55 @@ export default function BookList() {
     book.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const renderBooksTable = () => {
+    if (filteredBooks.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-sm">No books found</p>
+          <p className="text-gray-400 text-xs mt-1">Use the search bar or click the plus icon to add a book</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="overflow-hidden rounded-lg border border-gray-200">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Number</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Copyright</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Availability</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredBooks.map((book) => (
+              <tr key={book.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.callNumber}</td>
+                <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.author}</td>
+                <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.title}</td>
+                <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.copyright}</td>
+                <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.location}</td>
+                <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.availability}</td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <button onClick={() => handleEdit(book)} className="text-indigo-600 hover:text-indigo-900 mr-2">
+                    <FaEdit />
+                  </button>
+                  <button onClick={() => handleDelete(book.id)} className="text-red-600 hover:text-red-900">
+                    <FaTrash />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="p-8 max-w-7xl mx-auto bg-[#F5F5F7] min-h-screen">
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -103,48 +152,7 @@ export default function BookList() {
         </div>
 
         <div className="mt-4">
-          {filteredBooks.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-sm">No books found</p>
-              <p className="text-gray-400 text-xs mt-1">Use the search bar or click the plus icon to add a book</p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-lg border border-gray-200">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Number</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Copyright</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Availability</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredBooks.map((book) => (
-                    <tr key={book.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.callNumber}</td>
-                      <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.author}</td>
-                      <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.title}</td>
-                      <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.copyright}</td>
-                      <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.location}</td>
-                      <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.availability}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onClick={() => handleEdit(book)} className="text-indigo-600 hover:text-indigo-900 mr-2">
-                          <FaEdit />
-                        </button>
-                        <button onClick={() => handleDelete(book.id)} className="text-red-600 hover:text-red-900">
-                          <FaTrash />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          {renderBooksTable()}
         </div>
       </div>
 
