@@ -85,7 +85,7 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
   return (
     <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
-        <h3 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-500 bg-clip-text text-transparent mb-6">
+        <h3 className="text-lg font-semibold leading-6 text-gray-900 mb-4">
           Add Books for Author
         </h3>
         <form onSubmit={handleSubmit} className="space-y-6">
