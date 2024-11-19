@@ -1,7 +1,8 @@
-// Dashboard.tsx
 import Sidebar from './Sidebar';
 import Header from './Header'; // Import the Header component
 import { Outlet } from 'react-router-dom';
+import ChatIcon from './ChatIcon'; // Import the ChatIcon component
+import ChatBox from './ChatBox'; // Import the ChatBox component
 
 export default function Dashboard() {
   return (
@@ -11,6 +12,8 @@ export default function Dashboard() {
         <Header /> {/* Include the Header component here */}
         <Outlet />
       </div>
+      <ChatIcon onClick={() => {}} /> {/* Placeholder for ChatIcon */}
+      <ChatBox /> {/* ChatBox will display when the icon is clicked */}
     </div>
   );
 }
