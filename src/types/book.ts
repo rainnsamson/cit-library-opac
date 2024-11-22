@@ -8,5 +8,6 @@ export interface Book {
   copyright: string;
   location: string;
   availability: number;
+  imageUrl: string;
   createdAt: Timestamp;  // Use Timestamp here
 }

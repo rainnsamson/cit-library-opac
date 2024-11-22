@@ -8,6 +8,8 @@ import { FaEdit, FaTrash } from 'react-icons/fa';
 import EditBookModal from './EditBookModal';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { auth } from '../firebase'; // Import Firebase auth
+import { onAuthStateChanged } from 'firebase/auth'; // Import onAuthStateChanged
 
 export default function BookList() {
   const [books, setBooks] = useState<Book[]>([]);
@@ -15,8 +17,25 @@ export default function BookList() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [bookToEdit, setBookToEdit] = useState<Book | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Listen for auth state changes
   useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticated(true); // User is authenticated
+      } else {
+        setIsAuthenticated(false); // User is not authenticated
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch books from Firestore
+  useEffect(() => {
+    if (!isAuthenticated) return; // Don't fetch books if user is not authenticated
+
     const q = query(collection(db, 'books-collection'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const bookData: Book[] = [];
@@ -30,6 +49,7 @@ export default function BookList() {
           copyright: data.copyright,
           location: data.location,
           availability: data.availability,
+          imageUrl: data.imageUrl || '', // Add imageUrl field
           createdAt: data.createdAt,
         });
       });
@@ -37,9 +57,11 @@ export default function BookList() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleDelete = async (id: string) => {
+    if (!isAuthenticated) return;
+
     const isConfirmed = window.confirm('Are you sure you want to delete this book?');
     if (!isConfirmed) return;
 
@@ -53,11 +75,13 @@ export default function BookList() {
   };
 
   const handleEdit = (book: Book) => {
+    if (!isAuthenticated) return;
     setBookToEdit(book);
     setIsEditModalOpen(true);
   };
 
   const handleAddBook = () => {
+    if (!isAuthenticated) return;
     setIsAddModalOpen(true);
   };
 
@@ -93,6 +117,7 @@ export default function BookList() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Call Number</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Author</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
@@ -105,6 +130,17 @@ export default function BookList() {
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredBooks.map((book) => (
               <tr key={book.id} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">
+                  {book.imageUrl ? (
+                    <img
+                      src={book.imageUrl}
+                      alt={`${book.title} cover`}
+                      className="h-16 w-16 object-cover rounded"
+                    />
+                  ) : (
+                    <span className="text-gray-400">No Image</span>
+                  )}
+                </td>
                 <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.callNumber}</td>
                 <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.author}</td>
                 <td className="px-6 py-4 whitespace-normal break-words text-sm text-gray-600">{book.title}</td>

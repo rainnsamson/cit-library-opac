@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { addDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import toast from 'react-hot-toast';
+import { auth } from '../firebase'; // Import Firebase auth
+import { onAuthStateChanged } from 'firebase/auth'; // Firebase auth method
 
-// Define Book type
 interface Book {
   title: string;
   callNumber: string;
@@ -12,6 +13,7 @@ interface Book {
   location: string;
   author: string;
   createdAt: Date;
+  imageUrl: string; // Add imageUrl to the Book type
 }
 
 interface AddBookModalProps {
@@ -22,15 +24,28 @@ interface AddBookModalProps {
 export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
   const [author, setAuthor] = useState('');
   const [bookTitles, setBookTitles] = useState('');
+  const [imageUrl, setImageUrl] = useState(''); // Track the image URL
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  if (!isOpen) return null;
+  // UseEffect to detect user authentication state
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
 
+    return () => unsubscribe();
+  }, []);
+
+  // Don't render modal if not authenticated or modal isn't open
+  if (!isOpen || !isAuthenticated) return null;
+
+  // Handle form submission to add books to Firestore
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Split the input by newline and process each line
+    // Split book titles input into individual books and parse them
     const booksData: Book[] = bookTitles.split('\n').map((line) => {
-      const match = line.match(/^(.+?),\s?\((\d+)\),\s?\((\d{4})\),\s?\((\d+)\),\s?\((.+?)\)$/); // Regex to match Title, (Call Number), (Copyright Year), (Availability), (Location)
+      const match = line.match(/^(.+?),\s?\((\d+)\),\s?\((\d{4})\),\s?\((\d+)\),\s?\((.+?)\)$/);
 
       if (match) {
         const [, title, callNumber, copyright, availability, location] = match;
@@ -38,16 +53,18 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
           title: title.trim(),
           callNumber: callNumber.trim(),
           copyright: copyright.trim(),
-          availability: Number(availability.trim()), // Convert availability to a number
-          location: location.trim(), // Add location
-          author: author.trim(), // Add the author's name
+          availability: Number(availability.trim()),
+          location: location.trim(),
+          author: author.trim(),
           createdAt: new Date(),
+          imageUrl: imageUrl.trim(), // Use the provided image URL
         };
       } else {
-        return null; // Invalid format, ignore
+        return null;
       }
-    }).filter(Boolean) as Book[]; // Typecast to Book[] after filtering out null values
+    }).filter(Boolean) as Book[];
 
+    // Check if there are any valid book details
     if (booksData.length === 0) {
       toast.error('Please enter valid book details in the correct format');
       return;
@@ -55,30 +72,38 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
 
     try {
       const booksCollectionRef = collection(db, 'books-collection');
-      
-      // Check for duplicates in Firestore
+
+      // Get all books in Firestore to check for duplicates
       const querySnapshot = await getDocs(booksCollectionRef);
+
+      // Check for duplicate books before saving
       for (const book of booksData) {
-        const duplicateBook = querySnapshot.docs.find(doc => doc.data().callNumber === book.callNumber && doc.data().title === book.title);
-        
+        const duplicateBook = querySnapshot.docs.find(
+          (doc) => doc.data().callNumber === book.callNumber && doc.data().title === book.title
+        );
+
         if (duplicateBook) {
           toast.error(`Book with title "${book.title}" and call number "${book.callNumber}" already exists.`);
-          return; // Exit the function if duplicate is found
+          return;
         }
       }
 
-      // If no duplicates, add the books
+      // Add the new books to Firestore
       for (const book of booksData) {
         await addDoc(booksCollectionRef, book);
       }
 
       toast.success('Books added successfully');
-      onClose();
+      onClose(); // Close the modal after successful addition
+
+      // Reset input fields
       setAuthor('');
       setBookTitles('');
+      setImageUrl('');
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast.error('Error adding books: ' + errorMessage);
+      console.error('Error adding books:', errorMessage); // Log error to console
+      toast.error('Error adding books: ' + errorMessage); // Show error toast
     }
   };
 
@@ -108,7 +133,16 @@ export default function AddBookModal({ isOpen, onClose }: AddBookModalProps) {
               value={bookTitles}
               onChange={(e) => setBookTitles(e.target.value)}
               placeholder="Enter each book on a new line (e.g., Taxation, (123), (2024), (5), (Shelf A))"
-              maxLength={2000}  // Adjusted for approximately 10-20 entries
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+            <input
+              type="text"
+              className="input-field"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              placeholder="Enter the image URL (e.g., https://example.com/image.jpg)"
             />
           </div>
           <div className="flex justify-end space-x-3 pt-4">

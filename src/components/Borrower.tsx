@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc, limit, startAfter } from 'firebase/firestore';
 import { db } from '../firebase';
 import { FaTrash } from 'react-icons/fa';
 import AddBorrowerModal from './AddBorrowerModal';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Import Firebase Auth
 
 interface Borrower {
   id: string;
@@ -25,9 +26,36 @@ export default function BorrowerList() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // State for authentication
+  const [lastVisible, setLastVisible] = useState<any>(null); // Track the last document for pagination
+  const [loadingMore, setLoadingMore] = useState(false); // State for loading more borrowers
 
   useEffect(() => {
-    const q = query(collection(db, 'borrowers'), orderBy('dateIssued', 'desc'));
+    const auth = getAuth();
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setIsAuthenticated(true); // User is authenticated
+      } else {
+        setIsAuthenticated(false); // User is not authenticated
+        toast.error('You must be logged in to access the borrower list.');
+        // Optionally, redirect the user to the login page
+        window.location.href = '/login'; // Adjust the redirect URL as needed
+      }
+    });
+
+    // Clean up the authentication listener
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return; // Skip fetching borrowers if not authenticated
+
+    const q = query(
+      collection(db, 'borrowers'),
+      orderBy('dateIssued', 'desc'),
+      limit(10) // Limit the number of borrowers loaded at once
+    );
+    
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
@@ -37,6 +65,7 @@ export default function BorrowerList() {
         })) as Borrower[];
         setBorrowers(borrowerData);
         setLoading(false);
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
       },
       (error) => {
         console.error('Error fetching data: ', error);
@@ -46,7 +75,7 @@ export default function BorrowerList() {
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [isAuthenticated]);
 
   const handleDelete = async (id: string) => {
     const isConfirmed = window.confirm('Are you sure you want to delete this borrower?');
@@ -77,14 +106,6 @@ export default function BorrowerList() {
     return formattedDate.toLocaleDateString('en-US');
   };
 
-  const filteredBorrowers = borrowers.filter((borrower) => {
-    return (
-      borrower.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      borrower.callNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      borrower.bookTitle.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
-
   const handleStatusChange = async (borrowerId: string, newStatus: string) => {
     try {
       await updateDoc(doc(db, 'borrowers', borrowerId), {
@@ -96,6 +117,42 @@ export default function BorrowerList() {
       toast.error('Failed to update status');
     }
   };
+
+  const loadMore = () => {
+    if (loadingMore || !lastVisible) return; // Prevent multiple loads
+
+    setLoadingMore(true);
+    const q = query(
+      collection(db, 'borrowers'),
+      orderBy('dateIssued', 'desc'),
+      startAfter(lastVisible), // Start from the last document
+      limit(10) // Limit the number of borrowers loaded
+    );
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const borrowerData: Borrower[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as Borrower[];
+        setBorrowers((prevState) => [...prevState, ...borrowerData]); // Append the new data
+        setLastVisible(snapshot.docs[snapshot.docs.length - 1]);
+        setLoadingMore(false);
+      },
+      (error) => {
+        console.error('Error fetching data: ', error);
+        toast.error('Failed to load more borrower data');
+        setLoadingMore(false);
+      }
+    );
+
+    return () => unsubscribe();
+  };
+
+  if (!isAuthenticated) {
+    return null; // Optionally, show a loading spinner or an alert while checking authentication
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto bg-[#F5F5F7] min-h-screen">
@@ -126,7 +183,7 @@ export default function BorrowerList() {
             <div className="text-center py-12">
               <p className="text-gray-500 text-sm">Loading borrowers...</p>
             </div>
-          ) : filteredBorrowers.length === 0 ? (
+          ) : borrowers.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 text-sm">No borrowers found</p>
               <p className="text-gray-400 text-xs mt-1">Use the search bar or click the button to add a borrower</p>
@@ -147,34 +204,30 @@ export default function BorrowerList() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredBorrowers.map((borrower) => (
+                  {borrowers.map((borrower) => (
                     <tr key={borrower.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 text-sm text-gray-600">{borrower.idNumber}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{borrower.fullName}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{borrower.courseYear}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{borrower.bookTitle}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">{formatDate(borrower.dateIssued)}</td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {borrower.dateReturned ? formatDate(borrower.dateReturned) : 'Not Returned'}
-                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{borrower.dateReturned ? formatDate(borrower.dateReturned) : 'N/A'}</td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         <select
                           value={borrower.status}
                           onChange={(e) => handleStatusChange(borrower.id, e.target.value)}
-                          className="bg-white border rounded-md p-2"
+                          className="bg-gray-100 text-sm py-2 px-4 rounded-md"
                         >
-                          <option value="Not Returned" className="text-red-500">
-                            Not Returned
-                          </option>
-                          <option value="Returned" className="text-green-500">
-                            Returned
-                          </option>
+                          <option value="Issued">Issued</option>
+                          <option value="Returned">Returned</option>
+                          <option value="Overdue">Overdue</option>
                         </select>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         <button
                           onClick={() => handleDelete(borrower.id)}
                           className="text-red-600 hover:text-red-700"
+                          title="Delete Borrower"
                         >
                           <FaTrash />
                         </button>
@@ -183,6 +236,14 @@ export default function BorrowerList() {
                   ))}
                 </tbody>
               </table>
+
+              {loadingMore ? (
+                <div className="text-center py-4">Loading more borrowers...</div>
+              ) : (
+                <div className="text-center py-4">
+                  <button onClick={loadMore} className="text-blue-600">Load More</button>
+                </div>
+              )}
             </div>
           )}
         </div>
